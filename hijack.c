@@ -111,7 +111,7 @@ int main(int argc, char ** argv) {
 
         return 0;
     }    
-        if (0 == stat(RECOVERY_MODE_FILE, &info)) {
+	if (0 == stat(RECOVERY_MODE_FILE, &info)) {
                 result = remove(RECOVERY_MODE_FILE);
                 result = remount_root("/system/bin/hijack", 1);
                 result = mkdir("/tmp", S_IRWXU);
@@ -132,7 +132,23 @@ int main(int argc, char ** argv) {
                 char * updater_args[] = { UPDATE_BINARY, "2", "0", RECOVERY_UPDATE_ZIP, NULL};
                 result = exec_and_wait(updater_args);
                 return result;
-	}
+		}
+	else {
+       		result = mark_file(RECOVERY_MODE_FILE);
+		result = remount_root("/cdrom/recovery/hijack", 1);
+		result = property_set("persist.service.adb.enable", "1");
+		result = mkdir("/newboot", S_IRWXU);
+		char * updater_args[] = { UPDATE_BINARY, "2", "0", BOOT_UPDATE_ZIP, NULL };
+		result = exec_and_wait(updater_args);
+		char * copy_args[] = { "/newboot/sbin/hijack", "cp", "-a", "/newboot/.", "/", NULL };
+		result = exec_and_wait(copy_args);
+		char * rm_args[] = { "/sbin/hijack", "rm", "-rf", "/newboot", NULL };
+		result = exec_and_wait(rm_args);
+		char * init_args[] = { "/sbin/2nd-init", NULL };
+		result = exec_and_wait(init_args);
+		return result;
+		}
+
     char real_executable[PATH_MAX];
     printf("calling original logwrapper.bin\n");
     sprintf(real_executable, "%s.bin", hijacked_executable);
