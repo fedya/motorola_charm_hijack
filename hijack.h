@@ -24,15 +24,50 @@
 #include <sys/mount.h>
 #include <cutils/properties.h>
 
+// sleepwait time (we default to MAX_INT fur die lulz)
+#ifndef HIJACK_SLEEPWAIT_SEC
+#define HIJACK_SLEEPWAIT_SEC UINT_MAX
+#endif
+
 // file that throws us into recovery mode
 #ifndef RECOVERY_MODE_FILE
 #define RECOVERY_MODE_FILE "/data/.recovery_mode"
+#endif
+
+// if we enable logging...
+#ifdef LOG_ENABLE
+// log device
+#ifndef LOG_DEVICE
+#define LOG_DEVICE "/dev/block/mmcblk0p1" // default to SD card
+#endif
+// log mount point
+#ifndef LOG_MOUNT
+#define LOG_MOUNT "/sdlog" // default to SD logging
+#endif
+// log file name (will be placed under SDLOG_MOUNT)
+#ifndef LOG_FILE
+#define LOG_FILE "hijack.log" // this works
+#endif
+// script that dumps dmesg/logcat/etc
+#ifndef LOG_DUMP_BINARY
+#define LOG_DUMP_BINARY "/system/bin/hijack.log_dump"
+#endif
+// frequency of indefinite log
+#define LOG_INDEF_FREQ "10s"
+// convenience define
+#define LOG_PATH LOG_MOUNT"/"LOG_FILE
 #endif
 
 // update-binary executable
 #ifndef UPDATE_BINARY
 #define UPDATE_BINARY "/cdrom/recovery/update-binary"
 #endif
+
+// boot update.zip
+#ifndef BOOT_UPDATE_ZIP
+#define BOOT_UPDATE_ZIP "/cdrom/recovery/hijack-boot.zip"
+#endif
+
 // recovery update.zip
 #ifndef RECOVERY_UPDATE_ZIP
 #define RECOVERY_UPDATE_ZIP "/cdrom/recovery/recovery.zip"
@@ -42,8 +77,8 @@
 int exec_and_wait(char ** argp);
 int remount_root(const char * hijack_exec, int rw);
 int hijack_mount(const char * hijack_exec, const char * dev, const char * mount_point);
-int hijack_mount_ex(const char * hijack_exec, const char * type, const char * dev, const char * mount_point);
 int hijack_umount(const char * hijack_exec, const char * mount_point);
+void hijack_log(char * format, ...);
 int mark_file(char * filename);
 
 #endif
